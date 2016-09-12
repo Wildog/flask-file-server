@@ -14,9 +14,9 @@
     <div class="row">
       <div class="col-xs-12">
         <ol class="breadcrumb" dir="ltr">
-            <li class="breadcrumb-item"><a href="{{url_for('v_get_path')}}"><i class="fa fa-fw fa-home fa-lg"></i> </a></li>
+            <li class="breadcrumb-item"><a href="{{url_for('path_view')}}"><i class="fa fa-fw fa-home fa-lg"></i> </a></li>
             {% for part in path.strip('/').split('/') %}
-            <li class="breadcrumb-item"><a href="{{url_for('v_get_path', p='/'+path[:path.find(part)+part|length]+'/')}}"><strong>{{ part }}</strong></a></li>
+            <li class="breadcrumb-item"><a href="{{url_for('path_view', p='/'+path[:path.find(part)+part|length]+'/')}}"><strong>{{ part }}</strong></a></li>
             {% endfor %}
         </ol>
       </div>

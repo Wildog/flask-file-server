@@ -1,4 +1,5 @@
-from flask import Flask, make_response, request, session, render_template, send_file, stream_with_context, Response
+from flask import Flask, make_response, request, session, render_template, send_file, Response
+from flask.views import MethodView
 from datetime import datetime
 import humanize
 import os
@@ -94,67 +95,68 @@ def get_range(request):
     else:
         return 0, None
 
-@app.route('/')
-@app.route('/<path:p>')
-def v_get_path(p=''):
-    hide_dotfile = request.args.get('hide-dotfile', request.cookies.get('hide-dotfile', 'no'))
+class PathView(MethodView):
+    def get(self, p=''):
+        hide_dotfile = request.args.get('hide-dotfile', request.cookies.get('hide-dotfile', 'no'))
 
-    path = os.path.join(root, p)
-    if os.path.isdir(path):
-        contents = []
-        total = {'size': 0, 'dir': 0, 'file': 0}
-        for filename in os.listdir(path):
-            if filename in ignored:
-                continue
-            if hide_dotfile == 'yes' and filename[0] == '.':
-                continue
-            filepath = os.path.join(path, filename)
-            stat_res = os.stat(filepath)
-            info = {}
-            info['name'] = filename
-            info['mtime'] = stat_res.st_mtime
-            ft = get_type(stat_res.st_mode)
-            info['type'] = ft
-            total[ft] += 1
-            sz = stat_res.st_size
-            info['size'] = sz
-            total['size'] += sz
-            contents.append(info)
-        page = render_template('index.html', path=p, contents=contents, total=total, hide_dotfile=hide_dotfile)
-        res = make_response(page, 200)
-        res.set_cookie('hide-dotfile', hide_dotfile, max_age=16070400)
-    elif os.path.isfile(path):
-        if 'Range' in request.headers:
-            start, end = get_range(request)
-            res = partial_response(path, start, end)
-        else:
-            res = send_file(path)
-            res.headers.add('Content-Disposition', 'attachment')
-    else:
-        res = make_response('Not found', 404)
-    return res
-
-@app.route('/', methods=['POST'])
-@app.route('/<path:p>', methods=['POST'])
-def save_files(p=''):
-    path = os.path.join(root, p)
-    info = {}
-    if os.path.isdir(path):
-        files = request.files.getlist('files[]')
-        for file in files:
-            try:
-                file.save(os.path.join(path, file.filename))
-            except Exception as e:
-                info['status'] = 'error'
-                info['msg'] = str(e)
+        path = os.path.join(root, p)
+        if os.path.isdir(path):
+            contents = []
+            total = {'size': 0, 'dir': 0, 'file': 0}
+            for filename in os.listdir(path):
+                if filename in ignored:
+                    continue
+                if hide_dotfile == 'yes' and filename[0] == '.':
+                    continue
+                filepath = os.path.join(path, filename)
+                stat_res = os.stat(filepath)
+                info = {}
+                info['name'] = filename
+                info['mtime'] = stat_res.st_mtime
+                ft = get_type(stat_res.st_mode)
+                info['type'] = ft
+                total[ft] += 1
+                sz = stat_res.st_size
+                info['size'] = sz
+                total['size'] += sz
+                contents.append(info)
+            page = render_template('index.html', path=p, contents=contents, total=total, hide_dotfile=hide_dotfile)
+            res = make_response(page, 200)
+            res.set_cookie('hide-dotfile', hide_dotfile, max_age=16070400)
+        elif os.path.isfile(path):
+            if 'Range' in request.headers:
+                start, end = get_range(request)
+                res = partial_response(path, start, end)
             else:
-                info['status'] = 'success'
-                info['msg'] = 'File Saved'
-    else:
-        info['status'] = 'error'
-        info['msg'] = 'Invalid Operation'
-    res = make_response(json.JSONEncoder().encode(info), 200)
-    res.headers.add('Content-type', 'application/json')
-    return res
+                res = send_file(path)
+                res.headers.add('Content-Disposition', 'attachment')
+        else:
+            res = make_response('Not found', 404)
+        return res
+
+    def post(self, p=''):
+        path = os.path.join(root, p)
+        info = {}
+        if os.path.isdir(path):
+            files = request.files.getlist('files[]')
+            for file in files:
+                try:
+                    file.save(os.path.join(path, file.filename))
+                except Exception as e:
+                    info['status'] = 'error'
+                    info['msg'] = str(e)
+                else:
+                    info['status'] = 'success'
+                    info['msg'] = 'File Saved'
+        else:
+            info['status'] = 'error'
+            info['msg'] = 'Invalid Operation'
+        res = make_response(json.JSONEncoder().encode(info), 200)
+        res.headers.add('Content-type', 'application/json')
+        return res
+
+path_view = PathView.as_view('path_view')
+app.add_url_rule('/', view_func=path_view)
+app.add_url_rule('/<path:p>', view_func=path_view)
 
 app.run('0.0.0.0', 8000, threaded=True, debug=False)
