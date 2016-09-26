@@ -1,5 +1,6 @@
 from flask import Flask, make_response, request, session, render_template, send_file, Response
 from flask.views import MethodView
+from werkzeug import secure_filename
 from datetime import datetime
 import humanize
 import os
@@ -141,7 +142,8 @@ class PathView(MethodView):
             files = request.files.getlist('files[]')
             for file in files:
                 try:
-                    file.save(os.path.join(path, file.filename))
+                    filename = secure_filename(file.filename)
+                    file.save(os.path.join(path, filename))
                 except Exception as e:
                     info['status'] = 'error'
                     info['msg'] = str(e)
