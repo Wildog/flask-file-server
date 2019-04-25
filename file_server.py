@@ -175,9 +175,8 @@ app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
 
 if __name__ == '__main__':
-    if len(sys.argv)<3:
-        print "usage simple-file-server.py [port] [servepath] [key]"
-        sys.exit()
-    root = os.path.normpath(sys.argv[2])
-    key = sys.argv[3]
-    app.run('0.0.0.0', sys.argv[1], threaded=True, debug=False)
+    bind = os.getenv('FS_BIND', '0.0.0.0')
+    port = os.getenv('FS_PORT', '8000')
+    root = os.path.normpath(os.getenv('FS_PATH', '/tmp'))
+    key = os.getenv('FS_KEY')
+    app.run(bind, port, threaded=True, debug=False)
