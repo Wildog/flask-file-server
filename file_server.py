@@ -8,9 +8,12 @@ import re
 import stat
 import json
 import mimetypes
+import sys
+from pathlib2 import Path
 
 app = Flask(__name__, static_url_path='/assets', static_folder='assets')
-root = os.path.expanduser('~')
+root = os.path.normpath("/tmp")
+key = ""
 
 ignored = ['.bzr', '$RECYCLE.BIN', '.DAV', '.DS_Store', '.git', '.hg', '.htaccess', '.htpasswd', '.Spotlight-V100', '.svn', '__MACOSX', 'ehthumbs.db', 'robots.txt', 'Thumbs.db', 'thumbs.tps']
 datatypes = {'audio': 'm4a,mp3,oga,ogg,webma,wav', 'archive': '7z,zip,rar,gz,tar', 'image': 'gif,ico,jpe,jpeg,jpg,png,svg,webp', 'pdf': 'pdf', 'quicktime': '3g2,3gp,3gp2,3gpp,mov,qt', 'source': 'atom,bat,bash,c,cmd,coffee,css,hml,js,json,java,less,markdown,md,php,pl,py,rb,rss,sass,scpt,swift,scss,sh,xml,yml,plist', 'text': 'txt', 'video': 'mp4,m4v,ogv,webm', 'website': 'htm,html,mhtm,mhtml,xhtm,xhtml'}
@@ -101,6 +104,7 @@ class PathView(MethodView):
         hide_dotfile = request.args.get('hide-dotfile', request.cookies.get('hide-dotfile', 'no'))
 
         path = os.path.join(root, p)
+
         if os.path.isdir(path):
             contents = []
             total = {'size': 0, 'dir': 0, 'file': 0}
@@ -136,29 +140,44 @@ class PathView(MethodView):
         return res
 
     def post(self, p=''):
-        path = os.path.join(root, p)
-        info = {}
-        if os.path.isdir(path):
-            files = request.files.getlist('files[]')
-            for file in files:
-                try:
-                    filename = secure_filename(file.filename)
-                    file.save(os.path.join(path, filename))
-                except Exception as e:
-                    info['status'] = 'error'
-                    info['msg'] = str(e)
-                else:
-                    info['status'] = 'success'
-                    info['msg'] = 'File Saved'
+        if request.cookies.get('auth_cookie') == key:
+            path = os.path.join(root, p)
+            Path(path).mkdir(parents=True, exist_ok=True)
+
+            info = {}
+            if os.path.isdir(path):
+                files = request.files.getlist('files[]')
+                for file in files:
+                    try:
+                        filename = secure_filename(file.filename)
+                        file.save(os.path.join(path, filename))
+                    except Exception as e:
+                        info['status'] = 'error'
+                        info['msg'] = str(e)
+                    else:
+                        info['status'] = 'success'
+                        info['msg'] = 'File Saved'
+            else:
+                info['status'] = 'error'
+                info['msg'] = 'Invalid Operation'
+            res = make_response(json.JSONEncoder().encode(info), 200)
+            res.headers.add('Content-type', 'application/json')
         else:
+            info = {} 
             info['status'] = 'error'
-            info['msg'] = 'Invalid Operation'
-        res = make_response(json.JSONEncoder().encode(info), 200)
-        res.headers.add('Content-type', 'application/json')
+            info['msg'] = 'Authentication failed'
+            res = make_response(json.JSONEncoder().encode(info), 401)
+            res.headers.add('Content-type', 'application/json')
         return res
 
 path_view = PathView.as_view('path_view')
 app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
 
-app.run('0.0.0.0', 8000, threaded=True, debug=False)
+if __name__ == '__main__':
+    if len(sys.argv)<3:
+        print "usage simple-file-server.py [port] [servepath] [key]"
+        sys.exit()
+    root = os.path.normpath(sys.argv[2])
+    key = sys.argv[3]
+    app.run('0.0.0.0', sys.argv[1], threaded=True, debug=False)
