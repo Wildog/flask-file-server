@@ -409,6 +409,10 @@ span.jFiler-icon-file.f-audio {
     font-size: 12px;
 }
 
+div .jFiler-item-others .text-error {
+    color: #ff2b2b !important;
+}
+
 .jFiler-items-grid .jFiler-item-trash-action:hover {
     cursor: pointer;
     color: #d9534f;

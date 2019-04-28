@@ -1,4 +1,31 @@
+function getCookie(cname) {
+  var name = cname + "=";
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var ca = decodedCookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return undefined;
+}
 $(document).ready(function(){
+    $("#login").submit(function( event ) {
+      var hash = $.base64.encode($( "#username" ).val()+":"+$( "#password" ).val())      
+      document.cookie = "username="+$("#username").val()+";path=/"
+      document.cookie = "auth_cookie="+hash+";path=/"
+      $("#userlogin").text($( "#username" ).val())
+      $('#login-modal').modal('toggle');
+      event.preventDefault();
+    });
+    $("#userlogin").text(getCookie("username") || "Login");
+    $('#uploader-modal').on('hidden.bs.modal', function () {
+        location.reload();
+    })
     $('#filer_input').filer({
         showThumbs: true,
         addMore: true,
@@ -25,6 +52,7 @@ $(document).ready(function(){
             beforeSend: function(){},
             success: function(data, el){
                 var parent = el.find(".jFiler-jProgressBar").parent();
+                data = JSON.parse(data)
                 if (data.status == 'success') {
                     el.find(".jFiler-jProgressBar").fadeOut("slow", function(){
                         $("<div class=\"jFiler-item-others text-success\"><i class=\"icon-jfi-check-circle\"></i> Success</div>").hide().appendTo(parent).fadeIn("slow");
@@ -35,10 +63,11 @@ $(document).ready(function(){
                     });
                 }
             },
-            error: function(el){
+            error: function(el,i,g,h,e,d,jqxhr,c,f){
+                data = JSON.parse(jqxhr.responseText)
                 var parent = el.find(".jFiler-jProgressBar").parent();
                 el.find(".jFiler-jProgressBar").fadeOut("slow", function(){
-                    $("<div class=\"jFiler-item-others text-error\"><i class=\"icon-jfi-minus-circle\"></i> Error</div>").hide().appendTo(parent).fadeIn("slow");
+                    $("<div class=\"jFiler-item-others text-error\"><i class=\"icon-jfi-minus-circle\"></i> Error: " + data.msg + "</div>").hide().appendTo(parent).fadeIn("slow");
                 });
             },
             statusCode: null,
