@@ -138,6 +138,37 @@ class PathView(MethodView):
         else:
             res = make_response('Not found', 404)
         return res
+    
+    def put(self, p=''):
+        if request.cookies.get('auth_cookie') == key:
+            path = os.path.join(root, p)
+            dir_path = os.path.dirname(path)
+            Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+            info = {}
+            if os.path.isdir(dir_path):
+                try:
+                    filename = secure_filename(os.path.basename(path))
+                    with open(os.path.join(dir_path, filename), 'wb') as f:
+                        f.write(request.stream.read())
+                except Exception as e:
+                    info['status'] = 'error'
+                    info['msg'] = str(e)
+                else:
+                    info['status'] = 'success'
+                    info['msg'] = 'File Saved'
+            else:
+                info['status'] = 'error'
+                info['msg'] = 'Invalid Operation'
+            res = make_response(json.JSONEncoder().encode(info), 200)
+            res.headers.add('Content-type', 'application/json')
+        else:
+            info = {} 
+            info['status'] = 'error'
+            info['msg'] = 'Authentication failed'
+            res = make_response(json.JSONEncoder().encode(info), 401)
+            res.headers.add('Content-type', 'application/json')
+        return res
 
     def post(self, p=''):
         if request.cookies.get('auth_cookie') == key:
