@@ -200,6 +200,37 @@ class PathView(MethodView):
             res = make_response(json.JSONEncoder().encode(info), 401)
             res.headers.add('Content-type', 'application/json')
         return res
+    
+    def delete(self, p=''):
+        if request.cookies.get('auth_cookie') == key:
+            path = os.path.join(root, p)
+            dir_path = os.path.dirname(path)
+            Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+            info = {}
+            if os.path.isdir(dir_path):
+                try:
+                    filename = secure_filename(os.path.basename(path))
+                    os.remove(os.path.join(dir_path, filename))
+                    os.rmdir(dir_path)
+                except Exception as e:
+                    info['status'] = 'error'
+                    info['msg'] = str(e)
+                else:
+                    info['status'] = 'success'
+                    info['msg'] = 'File Deleted'
+            else:
+                info['status'] = 'error'
+                info['msg'] = 'Invalid Operation'
+            res = make_response(json.JSONEncoder().encode(info), 204)
+            res.headers.add('Content-type', 'application/json')
+        else:
+            info = {}
+            info['status'] = 'error'
+            info['msg'] = 'Authentication failed'
+            res = make_response(json.JSONEncoder().encode(info), 401)
+            res.headers.add('Content-type', 'application/json')
+        return res
 
 path_view = PathView.as_view('path_view')
 app.add_url_rule('/', view_func=path_view)
