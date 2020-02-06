@@ -160,7 +160,7 @@ class PathView(MethodView):
             else:
                 info['status'] = 'error'
                 info['msg'] = 'Invalid Operation'
-            res = make_response(json.JSONEncoder().encode(info), 200)
+            res = make_response(json.JSONEncoder().encode(info), 201)
             res.headers.add('Content-type', 'application/json')
         else:
             info = {} 
