@@ -1,3 +1,5 @@
 flask
 humanize
 pathlib2
+Werkzeug==0.16.0
+
