@@ -134,7 +134,9 @@
             <div class="modal-footer">
               <div class="pull-xs-right">
                 <button type="button" id="close-login" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="submit" id="send-login" class="btn btn-secondary">Login</button>
+                <button type="submit" id="send-pam-login" class="btn btn-secondary" name="pam-login">Login PAM</button>
+                <button type="submit" id="send-kit-login" class="btn btn-secondary" name="kit-login">Login KIT LDAP</button>
+                <button type="submit" id="send-oidc-login" class="btn btn-secondary" name="oidc-login">Use OpenID Connect</button>
               </div>
             </div>
           </form>
@@ -151,5 +153,3 @@
   <script type="text/javascript" src="{{url_for('static', filename='js/custom.js')}}"></script>
 </body>
 </html>
-
-

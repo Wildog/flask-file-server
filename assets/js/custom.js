@@ -15,7 +15,8 @@ function getCookie(cname) {
 }
 $(document).ready(function(){
     $("#login").submit(function( event ) {
-      var hash = $.base64.encode($( "#username" ).val()+":"+$( "#password" ).val())      
+      var hash = $.base64.encode($( "#username" ).val()+":"+$( "#password" ).val())
+      //   var submit_button_id = event.originalEvent.submitter.id
       document.cookie = "username="+$("#username").val()+";path=/"
       document.cookie = "auth_cookie="+hash+";path=/"
       $("#userlogin").text($( "#username" ).val())
