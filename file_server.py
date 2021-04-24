@@ -241,4 +241,5 @@ if __name__ == '__main__':
     port = os.getenv('FS_PORT', '8000')
     root = os.path.normpath(os.getenv('FS_PATH', '/tmp'))
     key = os.getenv('FS_KEY')
-    app.run(bind, port, threaded=True, debug=False)
+    debug = True if os.getenv('FS_DEBUG', False) else False
+    app.run(bind, port, threaded=True, debug=debug)
