@@ -1,4 +1,4 @@
-from flask import Flask, make_response, request, session, render_template, send_file, Response
+from flask import Flask, make_response, redirect, url_for, request, session, render_template, send_file, Response
 from flask.views import MethodView
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -10,6 +10,7 @@ import json
 import mimetypes
 import sys
 from pathlib2 import Path
+import pam
 
 app = Flask(__name__, static_url_path='/assets', static_folder='assets')
 root = os.path.normpath("/tmp")
@@ -232,9 +233,56 @@ class PathView(MethodView):
             res.headers.add('Content-type', 'application/json')
         return res
 
+class LoginView(MethodView):
+    def get(self):
+        """
+        GET method of the login page showing a very basic formular
+        """
+        result = """
+        <form action="" method="post">
+            <p><input type=text name=username>
+            <p><input type=password name=password>
+            <p><input type=submit value=PAM name=pam>
+            <p><input type=submit value=KIT name=kit>
+            <p><input type=submit value=OIDC name=oidc>
+        </form>
+        """
+        if session.get("username"):
+            result = "Your username is {}".format(session["username"])
+        return result
+    def post(self):
+        """
+        POST method to actually gather the form data
+        """
+        username = request.form['username']
+        password = request.form['password']
+
+        if request.form.get('pam') and pam_authentication(username, password):
+            session['username'] = username
+        elif request.form.get('kit') and kit_authentication(username, password):
+            session['username'] = username
+        elif request.form.get('oidc') and oidc_authentication(username, password):
+            session['username'] = username
+        else:
+            return 'Invalid username/password'
+        return redirect(url_for('login_view'))
+
+def pam_authentication(username, password):
+    p = pam.pam()
+    return p.authenticate(str(username), str(password))
+
+def kit_authentication(username, password):
+    raise NotImplementedError
+
+def oidc_authentication(username, password):
+    raise NotImplementedError
+
 path_view = PathView.as_view('path_view')
 app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
+
+login_view = LoginView.as_view('login_view')
+app.add_url_rule('/login', view_func=login_view)  # TODO: What if a folder/file is named login?
 
 if __name__ == '__main__':
     bind = os.getenv('FS_BIND', '0.0.0.0')
@@ -242,4 +290,5 @@ if __name__ == '__main__':
     root = os.path.normpath(os.getenv('FS_PATH', '/tmp'))
     key = os.getenv('FS_KEY')
     debug = True if os.getenv('FS_DEBUG', False) else False
+    app.secret_key = os.urandom(30)
     app.run(bind, port, threaded=True, debug=debug)
