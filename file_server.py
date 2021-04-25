@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from flask import Flask, make_response, redirect, url_for, request, session, render_template, send_file, Response
 from flask.views import MethodView
 from werkzeug.utils import secure_filename
