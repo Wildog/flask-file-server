@@ -1,0 +1,6 @@
+version: "3.8"
+services:
+
+    file-browser:
+        environment:
+            - FS_DEBUG=true

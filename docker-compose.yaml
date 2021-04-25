@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+
+    file-browser:
+        image: file-browser
+        build: ./
+        ports:
+            - "8000:8000"
+        volumes:
+            - "/etc/passwd:/etc/passwd:ro"
+            - "/etc/shadow:/etc/shadow:ro"
+            - "./:/app"
+            - "$HOME/Downloads:/tmp"
